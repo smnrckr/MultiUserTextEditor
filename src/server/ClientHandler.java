@@ -214,19 +214,25 @@ public class ClientHandler implements Runnable {
                             break;
                         }
 
-                        Set<String> newEditors = new HashSet<>();
+                        // Mevcut editörleri al
+                        Set<String> currentEds = fileEditors.getOrDefault(fileName, new HashSet<>());
+
+                        // Yeni editörleri mevcut listeye ekle
                         if (!message.content.isEmpty()) {
-                            String[] eds = message.content.split(",");
-                            for (String ed : eds) {
-                                if (!ed.trim().isEmpty()) {
-                                    newEditors.add(ed.trim());
+                            String[] newEds = message.content.split(",");
+                            for (String ed : newEds) {
+                                String trimmedEd = ed.trim();
+                                if (!trimmedEd.isEmpty() && !trimmedEd.equals(fileOwner)) {
+                                    currentEds.add(trimmedEd);
+                                    System.out.println("Editör eklendi: " + trimmedEd + " dosyaya: " + fileName);
                                 }
                             }
                         }
 
-                        fileEditors.put(fileName, newEditors);
+                        // Güncellenmiş editör listesini kaydet
+                        fileEditors.put(fileName, currentEds);
 
-                        String combined = fileOwner +" (dosya sahibi)" + ";editors:" + String.join(",", newEditors);
+                        String combined = fileOwner + " (dosya sahibi)" + ";editors:" + String.join(",", currentEds);
                         Protocol editorsUpdate = new Protocol("MSG_EDITORS", "SERVER", fileName, combined);
                         editorsUpdate.statusCode = "200 OK";
 
@@ -236,8 +242,7 @@ public class ClientHandler implements Runnable {
                             }
                         }
 
-                        System.out.println("MSG_SET_EDITORS alındı. Dosya: " + fileName + ", Yeni editörler: " + newEditors);
-                        System.out.println("Tüm istemcilere MSG_EDITORS mesajı gönderiliyor.");
+                        System.out.println("MSG_SET_EDITORS işlendi. Dosya: " + fileName + ", Tüm editörler: " + currentEds);
 
                         Protocol infoUpdate = new Protocol("MSG_INFO", "SERVER", fileName, "Düzenleyiciler güncellendi.");
                         infoUpdate.statusCode = "200 OK";
